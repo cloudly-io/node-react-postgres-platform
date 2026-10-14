@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  labels:
+    app.kubernetes.io/part-of: node-react-postgres-platform
+  annotations:
+    # ingress-nginx applies rate-limit annotations per Ingress resource, not
+    # per path rule, so this covers both /api and / (not /api alone).
+    nginx.ingress.kubernetes.io/limit-rps: "10"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "3"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: node-react.local
+      http:
+        paths:
+          # No rewrite-target annotation: the controller forwards the
+          # original path unchanged, so /api/items still arrives at the
+          # backend as /api/items, matching its hardcoded /api/* routes.
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 4000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
